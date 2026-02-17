@@ -12,6 +12,9 @@ FROM oraclelinux:8.5
 LABEL release="12.1.2510"
 LABEL build="24.3.1.1"
 LABEL dbapi="24.1.1.0"
+LABEL licenseserver=version="3.7.0"
+LABEL dbaccess_version="24.1.1.0"
+LABEL postgres_version="15"
 LABEL description="TOTVS Protheus Standalone com PostgreSQL Embutido"
 LABEL maintainer="Julian de Almeida Santos <julian.santos.info@gmail.com>"
 LABEL version="2.1"
@@ -47,7 +50,6 @@ ENV DATABASE_TYPE= \
 
 # Atualiza sistema e remove conflitos
 # unixODBC-utf16 causa conflitos com drivers ODBC modernos
-# dmidecode não é necessário em containers
 RUN dnf update -y && \
     dnf remove -y unixODBC-utf16 unixODBC-utf16-devel && \
     dnf -qy module disable postgresql && \
