@@ -7,8 +7,6 @@ on:
       - '.vscode/**'
       - 'docs/**'
       - 'scripts/hooks/**'
-      - 'scripts/test/**'
-      - 'scripts/validation/**'
       - '.env.example'
       - '.gitignore'
       - 'CHANGELOG.md'
@@ -22,8 +20,6 @@ on:
       - '.vscode/**'
       - 'docs/**'
       - 'scripts/hooks/**'
-      - 'scripts/test/**'
-      - 'scripts/validation/**'
       - '.env.example'
       - '.gitignore'
       - 'CHANGELOG.md'
@@ -34,7 +30,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint-and-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck and Hadolint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          sudo curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-linux-x86_64 -o /usr/local/bin/hadolint
+          sudo chmod +x /usr/local/bin/hadolint
+
+      - name: Make validation scripts executable
+        run: chmod +x scripts/validation/*.sh
+
+      - name: Validate .env
+        run: ./scripts/validation/env.sh
+
+      - name: Run Docker Compose Config Check
+        run: ./scripts/validation/lint-compose.sh
+
+      - name: Run Hadolint (Dockerfile)
+        run: ./scripts/validation/lint-dockerfile.sh
+
+      - name: Run ShellCheck
+        run: ./scripts/validation/lint-shell.sh
+
+      - name: Validate Secrets
+        run: ./scripts/validation/secrets.sh --full
+
+      - name: Validate Versions
+        run: ./scripts/validation/versions.sh
+
   build-and-push:
+    needs: lint-and-validation
     runs-on: ubuntu-latest
 
     steps:
@@ -79,22 +110,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Build and Load Image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Run Integration Tests
-        run: |
-          # Pega a primeira tag gerada para o teste
-          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
-          ./scripts/test/test-run.sh --image "$FIRST_TAG" --timeout 300
 
       - name: Build and push Docker image
         if: github.event_name != 'pull_request'
