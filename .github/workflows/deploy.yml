@@ -7,8 +7,6 @@ on:
       - '.vscode/**'
       - 'docs/**'
       - 'scripts/hooks/**'
-      - 'scripts/test/**'
-      - 'scripts/validation/**'
       - '.env.example'
       - '.gitignore'
       - 'CHANGELOG.md'
@@ -22,8 +20,6 @@ on:
       - '.vscode/**'
       - 'docs/**'
       - 'scripts/hooks/**'
-      - 'scripts/test/**'
-      - 'scripts/validation/**'
       - '.env.example'
       - '.gitignore'
       - 'CHANGELOG.md'
@@ -34,7 +30,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint-and-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck and Hadolint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          sudo curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-linux-amd64 -o /usr/local/bin/hadolint
+          sudo chmod +x /usr/local/bin/hadolint
+
+      - name: Make validation scripts executable
+        run: chmod +x scripts/validation/*.sh
+
+      - name: Validate .env
+        run: ./scripts/validation/env.sh
+
+      - name: Run Docker Compose Config Check
+        run: ./scripts/validation/lint-compose.sh
+
+      - name: Run Hadolint (Dockerfile)
+        run: ./scripts/validation/lint-dockerfile.sh
+
+      - name: Run ShellCheck
+        run: ./scripts/validation/lint-shell.sh
+
+      - name: Validate Secrets
+        run: ./scripts/validation/secrets.sh --full
+
+      - name: Validate Versions
+        run: ./scripts/validation/versions.sh
+
   build-and-push:
+    needs: lint-and-validation
     runs-on: ubuntu-latest
 
     steps:
