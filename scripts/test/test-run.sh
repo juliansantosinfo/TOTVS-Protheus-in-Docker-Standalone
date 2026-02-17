@@ -185,6 +185,8 @@ print_info "Iniciando container..."
 if docker run -d \
     --name "$CONTAINER_NAME" \
     --ulimit nofile=65536:65536 \
+    --ulimit nproc=65536:65536 \
+    --ulimit memlock=-1:-1 \
     -e DATABASE_EMBEDDED=1 \
     -e DATABASE_RESTORE=1 \
     -e DATABASE_RESTORE_FULL=0 \
