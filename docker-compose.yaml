@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  protheus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: juliansantosinfo/totvs_protheus_standalone:12.1.2510
+    container_name: protheus_standalone
+    restart: unless-stopped
+    
+    environment:
+      # Configurações de Banco de Dados
+      - DATABASE_EMBEDDED=1       # 1 para usar PostgreSQL interno, 0 para externo
+      - DATABASE_RESTORE=1        # Restaura backup base na primeira execução
+      - DATABASE_RESTORE_FULL=0   # 1 para restaurar base completa (exige arquivo no resources)
+      - DATABASE_NAME=protheus
+      
+      # Configurações de Serviços REST
+      - ENABLE_REST_EMBEDDED=0    # REST no AppServer principal (porta 8080)
+      - ENABLE_REST_SERVICE=1     # AppServer REST dedicado (porta 8080)
+      
+      # Debug
+      - DEBUG_SCRIPT=0            # Ativa logs detalhados no entrypoint
+      
+    ports:
+      # AppServer Principal
+      - "1234:1234"               # SmartClient TCP
+      - "1235:1235"               # WebApp / WebAgent
+      - "2234:2234"               # RPC
+      
+      # Serviços Adicionais (Orquestrados internamente)
+      - "7890:7890"               # DBAccess Monitor
+      - "5555:5555"               # License Server Monitor
+      - "8020:8020"               # HTTP Monitor
+      
+      # REST API
+      - "8080:8080"               # REST Service
+      
+      # Banco de Dados (Opcional - caso queira acessar o Postgres interno)
+      - "5432:5432"
+
+    volumes:
+      # Persistência de dados do Protheus (Dicionários, logs, etc)
+      - protheus_data:/totvs/protheus_data
+      # Persistência do Banco de Dados PostgreSQL (se embedded)
+      - postgres_data:/var/lib/pgsql/15/data
+
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  protheus_data:
+    driver: local
+  postgres_data:
+    driver: local

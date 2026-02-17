@@ -4,17 +4,18 @@ on:
   push:
     branches: [ "master", "main", "12.1.*" ]
     paths-ignore:
-      - 'docs/**'
       - '.vscode/**'
+      - 'docs/**'
+      - 'scripts/hooks/**'
+      - 'scripts/test/**'
+      - 'scripts/validation/**'
       - '.env.example'
       - '.gitignore'
       - 'CHANGELOG'
       - 'docker-compose*'
-      - 'LICENSE.txt'
+      - 'docker-compose.yaml'
+      - 'LICENSE'
       - 'README.md'
-      - 'run.sh'
-      - 'scripts/validation/**'
-      - 'scripts/hooks/**'
 
   pull_request:
     branches: [ "master", "main", "12.1.*" ]
