@@ -40,7 +40,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
-          sudo curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-linux-amd64 -o /usr/local/bin/hadolint
+          sudo curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-linux-x86_64 -o /usr/local/bin/hadolint
           sudo chmod +x /usr/local/bin/hadolint
 
       - name: Make validation scripts executable
