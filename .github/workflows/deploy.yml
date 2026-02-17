@@ -1,0 +1,76 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ "master", "main", "12.1.*" ]
+    paths-ignore:
+      - 'docs/**'
+      - '.vscode/**'
+      - '.env.example'
+      - '.gitignore'
+      - 'CHANGELOG'
+      - 'docker-compose*'
+      - 'LICENSE.txt'
+      - 'README.md'
+      - 'run.sh'
+      - 'scripts/validation/**'
+      - 'scripts/hooks/**'
+
+  pull_request:
+    branches: [ "master", "main", "12.1.*" ]
+    paths-ignore:
+      - 'docs/**'
+      - '.vscode/**'
+      - '.env.example'
+      - '.gitignore'
+      - 'CHANGELOG'
+      - 'docker-compose*'
+      - 'LICENSE.txt'
+      - 'README.md'
+      - 'run.sh'
+      - 'scripts/validation/**'
+      - 'scripts/hooks/**'
+      
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Make scripts executable
+        run: chmod +x scripts/build/*.sh
+
+      - name: Cache Protheus Binaries
+        id: cache-binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            totvs/protheus/
+            totvs/dbaccess/
+            totvs/licenseserver/
+            totvs/protheus_data/
+          key: ${{ runner.os }}-protheus-binaries-${{ hashFiles('versions.env') }}
+          restore-keys: |
+            ${{ runner.os }}-protheus-binaries-
+
+      - name: Setup Resources (Download Binaries)
+        run: ./scripts/build/setup.sh
+
+      - name: Build Image
+        run: ./scripts/build/build.sh auto
+
+      - name: Push to Docker Hub
+        if: github.event_name != 'pull_request'
+        env:
+          PUSH_LATEST: ${{ github.ref_name == 'master' || github.ref_name == 'main' }}
+        run: ./scripts/build/push.sh

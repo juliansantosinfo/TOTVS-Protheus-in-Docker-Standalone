@@ -54,20 +54,20 @@ baixa_resources() {
 
     # --- DOWNLOAD DOS ARQUIVOS ---
 
-    echo "🔍 Consultando recursos locais em no diretório temporário..."
-    echo "Diretório Temporário: ${DOWNLOAD_DIR}"
+    echo "🔍 Consultando recursos locais no diretório de destino..."
+    echo "Diretório de Destino: ${DEST_DIR}"
 
     RUN_DOWNLOAD=0
     for dir in dbaccess licenseserver protheus protheus_data; do
         if [ ! -d "${DEST_DIR}/${dir}" ]; then
             echo "❌ Diretório ${dir} não localizado!"
-            RUN_SETUP=1
+            RUN_DOWNLOAD=1
         else
             echo "✅ Diretório ${dir} localizado!"
         fi
     done
     
-    if [[ "$RUN_DOWNLOAD" = "1" ]]; then
+    if [[ "$RUN_DOWNLOAD" == "1" ]]; then
     
         echo "🔍 Consultando API do GitHub..."
         echo "URL: ${API_URL}"
