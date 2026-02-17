@@ -9,15 +9,15 @@
 FROM oraclelinux:8.5
 
 # Metadata
-LABEL release="12.1.2510"
-LABEL build="24.3.1.1"
-LABEL dbapi="24.1.1.0"
-LABEL licenseserver=version="3.7.0"
-LABEL dbaccess_version="24.1.1.0"
-LABEL postgres_version="15"
-LABEL description="TOTVS Protheus Standalone com PostgreSQL Embutido"
-LABEL maintainer="Julian de Almeida Santos <julian.santos.info@gmail.com>"
-LABEL version="2.1"
+LABEL release="12.1.2510" \
+      build="24.3.1.1" \
+      dbapi="24.1.1.0" \
+      licenseserver.version="3.7.0" \
+      dbaccess.version="24.1.1.0" \
+      postgres.version="15" \
+      description="TOTVS Protheus Standalone com PostgreSQL Embutido" \
+      maintainer="Julian de Almeida Santos <julian.santos.info@gmail.com>" \
+      version="2.1"
 
 WORKDIR /totvs
 
