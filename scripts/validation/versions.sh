@@ -41,14 +41,14 @@ validate_service() {
     # 1. grep: busca a linha
     # 2. head: garante apenas a primeira ocorrência
     # 3. cut: pega o valor depois do =
-    # 4. tr: remove aspas e espaços
-    local actual_version=$(grep -iE "LABEL (release|version)=" "$dockerfile" | head -n 1 | cut -d'=' -f2 | tr -d '"' | tr -d "[:space:]")
+    # 4. tr: remove aspas, espaços e barras invertidas de continuação de linha
+    local actual_version=$(grep -iE "LABEL (release|version)=" "$dockerfile" | head -n 1 | cut -d'=' -f2 | tr -d '"' | tr -d "[:space:]" | tr -d "\\\\")
     
     # Identifica qual label está sendo usada para o possível fix
     local label_type=$(grep -iE -o "LABEL (release|version)=" "$dockerfile" | head -n 1 | cut -d' ' -f2 | cut -d'=' -f1)
 
     if [ "$actual_version" != "$expected_version" ]; then
-        echo "❌ ERRO ($service): Versão no Dockerfile ($actual_version) difere de versions.env ($expected_version)"
+        echo "❌ ERRO: Versão no Dockerfile ($actual_version) difere de versions.env ($expected_version)"
         EXIT_CODE=1
     else
         echo "✅ OK Versão correta ($expected_version)"

@@ -122,7 +122,7 @@ cleanup() {
 while [[ $# -gt 0 ]]; do
     case $1 in
         --image)
-            IMAGE_NAME="$2"
+            IMAGE_FULLNAME="$2"
             shift 2
             ;;
         --timeout)
