@@ -105,7 +105,7 @@ jobs:
         with:
           images: juliansantosinfo/totvs_protheus_standalone
           tags: |
-            type=ref,event=branch
+            type=ref,event=branch,enable=${{ github.ref_name != 'main' && github.ref_name != 'master' }}
             type=raw,value=latest,enable=${{ github.ref_name == 'main' || github.ref_name == 'master' }}
 
       - name: Set up Docker Buildx
