@@ -115,7 +115,7 @@ Este projeto fornece uma implementação **monolítica** do ERP TOTVS Protheus e
 
 ```bash
 # Build da imagem
-docker build -t protheus-standalone:latest .
+docker build -t juliansantosinfo/totvs_protheus_standalone:latest .
 
 # Executar container
 docker run -d \
@@ -125,7 +125,7 @@ docker run -d \
   -p 1235:1235 \
   -v protheus-data:/totvs/protheus_data \
   -v postgres-data:/var/lib/pgsql/15/data \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 
 # Verificar logs
 docker logs -f protheus
@@ -146,7 +146,7 @@ docker run -d \
   -p 1234:1234 \
   -p 1235:1235 \
   -v protheus-data:/totvs/protheus_data \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 ### 3️⃣ Microsoft SQL Server Externo
@@ -164,7 +164,7 @@ docker run -d \
   -p 1234:1234 \
   -p 1235:1235 \
   -v protheus-data:/totvs/protheus_data \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 ### 4️⃣ Oracle Externo
@@ -182,7 +182,7 @@ docker run -d \
   -p 1234:1234 \
   -p 1235:1235 \
   -v protheus-data:/totvs/protheus_data \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 ---
@@ -220,7 +220,7 @@ docker run -d \
   -e DATABASE_EMBEDDED=1 \
   -e DATABASE_RESTORE_FULL=1 \
   -p 1234:1234 -p 1235:1235 \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 #### Desenvolvimento Local (PostgreSQL Externo) 
@@ -236,7 +236,7 @@ docker run -d \
   -e DATABASE_EMBEDDED=0 \
   -e DATABASE_RESTORE=0 \
   -p 1234:1234 -p 1235:1235 \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 #### Desenvolvimento Local (MSSQL Externo)
@@ -252,7 +252,7 @@ docker run -d \
   -e DATABASE_EMBEDDED=0 \
   -e DATABASE_RESTORE=0 \
   -p 1234:1234 -p 1235:1235 \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 #### Desenvolvimento Local (Oracle com Service Name Customizado)
@@ -267,7 +267,7 @@ docker run -d \
   -e DATABASE_NAME=PROTHEUSPRD \
   -e DATABASE_EMBEDDED=0 \
   -p 1234:1234 -p 1235:1235 \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 #### AppServer REST Separado
@@ -279,7 +279,7 @@ docker run -d \
   -p 1234:1234 -p 1235:1235 \
   -p 3234:3234 -p 3235:3235 \
   -p 8080:8080 \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 #### REST Embedded no AppServer Principal
@@ -290,7 +290,7 @@ docker run -d \
   -e ENABLE_REST_EMBEDDED=1 \
   -p 1234:1234 -p 1235:1235 \
   -p 8080:8080 \
-  protheus-standalone:latest
+  juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
 ---
@@ -387,7 +387,7 @@ version: '3.8'
 
 services:
   protheus:
-    image: protheus-standalone:latest
+    image: juliansantosinfo/totvs_protheus_standalone:latest
     container_name: protheus
     environment:
       DATABASE_EMBEDDED: 1
@@ -428,7 +428,7 @@ services:
       - "5432:5432"
 
   protheus:
-    image: protheus-standalone:latest
+    image: juliansantosinfo/totvs_protheus_standalone:latest
     depends_on:
       - postgres
     environment:
@@ -500,7 +500,7 @@ docker exec protheus su - postgres -c "psql -c 'SELECT 1'"
 docker logs protheus
 
 # Modo debug
-docker run -e DEBUG_SCRIPT=1 protheus-standalone:latest
+docker run -e DEBUG_SCRIPT=1 juliansantosinfo/totvs_protheus_standalone:latest
 
 # Verificar variáveis
 docker exec protheus env | grep DATABASE
