@@ -1,8 +1,10 @@
 # TOTVS Protheus Standalone (All-in-One)
 
+[![CI Status](https://github.com/juliansantosinfo/TOTVS-Protheus-in-Docker-Standalone/actions/workflows/deploy.yml/badge.svg)](https://github.com/juliansantosinfo/TOTVS-Protheus-in-Docker-Standalone/actions)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![MSSQL](https://img.shields.io/badge/MSSQL-Supported-red.svg)](https://www.microsoft.com/sql-server)
+[![Oracle](https://img.shields.io/badge/Oracle-Supported-red.svg)](https://www.oracle.com/database/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ## 📋 Índice
@@ -11,6 +13,7 @@
 - [Arquitetura](#arquitetura)
 - [Requisitos](#requisitos)
 - [Início Rápido](#início-rápido)
+- [Docker Compose (Recomendado)](#docker-compose-recomendado)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
 - [Estrutura de Diretórios](#estrutura-de-diretórios)
 - [Portas Expostas](#portas-expostas)
@@ -25,60 +28,79 @@
 
 ## 🎯 Overview
 
-Este projeto fornece uma implementação **monolítica** do ERP TOTVS Protheus em um único container Docker. Ao contrário da arquitetura de microserviços, o modo Standalone executa todos os componentes necessários dentro do mesmo container:
+Este projeto fornece uma implementação **monolítica e automatizada** do ERP TOTVS Protheus em um único container Docker. Ao contrário da arquitetura de microserviços, o modo Standalone executa todos os componentes necessários dentro do mesmo container, orquestrados por scripts inteligentes:
 
-- **AppServer** - Servidor de aplicação do Protheus
-- **DBAccess** - Middleware de conexão com banco de dados
-- **License Server** - Servidor de licenças
-- **PostgreSQL** (opcional) - Banco de dados embarcado
+- **AppServer** - Servidor de aplicação do Protheus (suporte a SmartClient HTML e REST).
+- **DBAccess** - Middleware de conexão com banco de dados.
+- **License Server** - Servidor de licenças virtualizado.
+- **PostgreSQL** (opcional) - Banco de dados embarcado versão 15.
 
 ### 💡 Casos de Uso
 
-✅ **Desenvolvimento Local** - Ambiente completo em minutos  
-✅ **Demonstrações** - Setup rápido para apresentações  
-✅ **Testes** - Ambientes descartáveis e reproduzíveis  
-✅ **Treinamento** - Laboratórios isolados para cada aluno  
-✅ **CI/CD** - Testes automatizados de integração  
+✅ **Desenvolvimento Local** - Ambiente completo em minutos.
+✅ **Demonstrações** - Setup rápido para apresentações comerciais.
+✅ **Testes** - Ambientes descartáveis e reproduzíveis para QA.
+✅ **Treinamento** - Laboratórios isolados para cada aluno.
+✅ **CI/CD** - Validação de dicionários e compilações automatizadas.
 
-⚠️ **Não recomendado para produção** - Use arquitetura distribuída
+⚠️ **Não recomendado para produção** - Para ambientes produtivos, recomenda-se uma arquitetura distribuída e orquestrada (Kubernetes/Swarm).
 
 ---
 
 ## 🏗️ Arquitetura
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Docker Container                      │
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │ License      │  │   DBAccess   │  │  AppServer   │ │
-│  │ Server       │  │              │  │              │ │
-│  │ :5555        │  │   :7890      │  │ :1234 :1235  │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-│         │                  │                  │         │
-│         └──────────────────┴──────────────────┘         │
-│                            │                            │
-│                  ┌─────────▼─────────┐                 │
-│                  │   PostgreSQL      │                 │
-│                  │   (Embedded)      │                 │
-│                  │     :5432         │                 │
-│                  └───────────────────┘                 │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+O container atua como um "mini-servidor" encapsulado, gerenciando internamente a comunicação entre os componentes TOTVS.
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    Docker Container (All-in-One)            │
+│                                                             │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐   │
+│  │ License      │    │   DBAccess   │    │  AppServer   │   │
+│  │ Server :5555 │◄───┤    :7890     │◄───┤ :1234 :1235  │   │
+│  └──────────────┘    └──────┬───────┘    └──────────────┘   │
+│                             │                               │
+│                  ┌──────────▼──────────┐                    │
+│                  │ PostgreSQL Embedded │ (Opcional)         │
+│                  │       :5432         │                    │
+│                  └─────────────────────┘                    │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+                    ┌─────────▼─────────┐
+                    │  Volumes de Dados │
+                    │ (/protheus_data)  │
+                    └───────────────────┘
 ```
 
 ---
 
 ## 📦 Requisitos
 
-### Obrigatórios
-- Docker 20.10+ ou Docker Desktop
-- 4GB RAM mínimo (8GB recomendado)
-- 10GB espaço em disco
-- Binários do Protheus na pasta `./totvs/`
+### Sistema
+- Docker 20.10+ ou Docker Desktop.
+- **Memória:** 4GB RAM mínimo (8GB recomendado para performance aceitável).
+- **Disco:** 10GB espaço livre.
 
-### Estrutura de Arquivos Necessária
+### ⚠️ Configuração de Kernel (Linux)
+O Protheus requer limites elevados de descritores de arquivo. Se você executar em Linux nativo, garanta que o host permita:
+```bash
+ulimit -n 65536
 ```
+No Docker Compose, isso é tratado via configuração `ulimits`.
+
+---
+
+### Opção A: Setup Automatizado (Recomendado)
+Se você tem acesso ao repositório de recursos configurado:
+```bash
+chmod +x scripts/build/setup.sh
+./scripts/build/setup.sh
+```
+
+### Opção B: Setup Manual
+Organize os arquivos conforme a estrutura abaixo na raiz do projeto:
+
+```text
 ./totvs/
 ├── protheus/
 │   ├── bin/appserver/
@@ -109,14 +131,45 @@ Este projeto fornece uma implementação **monolítica** do ERP TOTVS Protheus e
 
 ---
 
-## 🚀 Início Rápido
+## 🚀 Início Rápido (Docker Run)
+
+### 0️⃣ Rápido e simples (PostgreSQL Embedded)
+
+Ideal para testes rápidos onde você não quer configurar um banco externo.
+
+**Linux / Mac:**
+
+```bash
+# Executar container
+docker run -d \
+  --name protheus \
+  -p 1234:1234 \
+  -p 1235:1235 \
+  juliansantosinfo/totvs_protheus_standalone:latest
+
+# Verificar logs
+docker logs -f protheus
+```
+
+**Widowns**
+
+```powershell
+# Executar container
+docker run -d `
+  --name protheus `
+  -p 1234:1234 `
+  -p 1235:1235 `
+  juliansantosinfo/totvs_protheus_standalone:latest
+
+# Verificar logs
+docker logs -f protheus
+```
 
 ### 1️⃣ PostgreSQL Embedded (Recomendado para Dev)
 
-```bash
-# Build da imagem
-docker build -t juliansantosinfo/totvs_protheus_standalone:latest .
+**Linux / Mac:**
 
+```bash
 # Executar container
 docker run -d \
   --name protheus \
@@ -131,7 +184,26 @@ docker run -d \
 docker logs -f protheus
 ```
 
+**Widowns**
+
+```powershell
+# Executar container
+docker run -d `
+  --name protheus `
+  -e DATABASE_EMBEDDED=1 `
+  -p 1234:1234 `
+  -p 1235:1235 `
+  -v protheus-data:/totvs/protheus_data `
+  -v postgres-data:/var/lib/pgsql/15/data `
+  juliansantosinfo/totvs_protheus_standalone:latest
+
+# Verificar logs
+docker logs -f protheus
+```
+
 ### 2️⃣ PostgreSQL Externo
+
+**Linux / Mac:**
 
 ```bash
 docker run -d \
@@ -149,7 +221,31 @@ docker run -d \
   juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
+**Widowns**
+
+```powershell
+# Executar container
+docker run -d `
+  --name protheus `
+  -e DATABASE_TYPE=POSTGRES `
+  -e DATABASE_SERVER=postgres.example.com `
+  -e DATABASE_PORT=5432 `
+  -e DATABASE_USERNAME=postgres `
+  -e DATABASE_PASSWORD=SenhaSegura123 `
+  -e DATABASE_NAME=protheus `
+  -e DATABASE_EMBEDDED=0 `
+  -p 1234:1234 `
+  -p 1235:1235 `
+  -v protheus-data:/totvs/protheus_data `
+  juliansantosinfo/totvs_protheus_standalone:latest
+
+# Verificar logs
+docker logs -f protheus
+```
+
 ### 3️⃣ Microsoft SQL Server Externo
+
+**Linux / Mac:**
 
 ```bash
 docker run -d \
@@ -167,7 +263,31 @@ docker run -d \
   juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
+**Widowns**
+
+```powershell
+# Executar container
+docker run -d `
+  --name protheus `
+  -e DATABASE_TYPE=MSSQL `
+  -e DATABASE_SERVER=mssql.example.com `
+  -e DATABASE_PORT=1433 `
+  -e DATABASE_USERNAME=sa `
+  -e DATABASE_PASSWORD=SenhaSegura123 `
+  -e DATABASE_NAME=protheus `
+  -e DATABASE_EMBEDDED=0 `
+  -p 1234:1234 `
+  -p 1235:1235 `
+  -v protheus-data:/totvs/protheus_data `
+  juliansantosinfo/totvs_protheus_standalone:latest
+
+# Verificar logs
+docker logs -f protheus
+```
+
 ### 4️⃣ Oracle Externo
+
+**Linux / Mac:**
 
 ```bash
 docker run -d \
@@ -185,21 +305,105 @@ docker run -d \
   juliansantosinfo/totvs_protheus_standalone:latest
 ```
 
+**Widowns**
+
+```powershell
+# Executar container
+docker run -d `
+  --name protheus `
+  -e DATABASE_TYPE=ORACLE `
+  -e DATABASE_SERVER=oracle.example.com `
+  -e DATABASE_PORT=1521 `
+  -e DATABASE_USERNAME=system `
+  -e DATABASE_PASSWORD=SenhaSegura123 `
+  -e DATABASE_NAME=ORCL `
+  -e DATABASE_EMBEDDED=0 `
+  -p 1234:1234 `
+  -p 1235:1235 `
+  -v protheus-data:/totvs/protheus_data `
+  juliansantosinfo/totvs_protheus_standalone:latest
+
+# Verificar logs
+docker logs -f protheus
+```
+
+---
+
+## 🐳 Docker Compose (Recomendado)
+
+A maneira mais robusta de executar o projeto, garantindo persistência e configurações de limites.
+
+Crie um arquivo `docker-compose.yaml` (ou use o fornecido no repositório):
+
+```yaml
+version: '3.8'
+
+services:
+  protheus:
+    image: juliansantosinfo/totvs_protheus_standalone:latest
+    container_name: protheus_standalone
+    restart: unless-stopped
+    
+    environment:
+      - DATABASE_EMBEDDED=1       # 1 para PostgreSQL interno
+      - DATABASE_RESTORE=1        # Restaura backup base na 1ª execução
+      - DATABASE_NAME=protheus
+      - ENABLE_REST_SERVICE=1     # Habilita serviço REST na porta 8080
+      
+    ports:
+      - "1234:1234" # TCP
+      - "1235:1235" # WebApp
+      - "8080:8080" # REST
+      
+    # CRÍTICO: Configuração necessária para o AppServer/LicenseServer
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 65536
+        hard: 65536
+
+    volumes:
+      - protheus_data:/totvs/protheus_data
+      - postgres_data:/var/lib/pgsql/15/data
+
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  protheus_data:
+  postgres_data:
+```
+
+Executar:
+```bash
+docker-compose up -d
+```
+
 ---
 
 ## 🔑 Variáveis de Ambiente
 
-### Obrigatórias (Banco Externo)
+O comportamento do container é controlado via ENV vars:
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `DATABASE_TYPE` | Tipo de banco de dados | `POSTGRES`, `MSSQL`, `ORACLE` |
-| `DATABASE_SERVER` | Endereço do servidor | `postgres.example.com` |
-| `DATABASE_PORT` | Porta do banco | `5432`, `1433`, `1521` |
-| `DATABASE_USERNAME` | Usuário do banco | `postgres`, `sa`, `system` |
-| `DATABASE_PASSWORD` | Senha do banco de dados | `SenhaSegura123` |
+### Configuração de Banco de Dados
 
-### Opcionais
+| Variável | Descrição | Padrão |
+|----------|-----------|--------|
+| `DATABASE_EMBEDDED` | `1` ativa PostgreSQL interno, `0` usa externo. | `1` |
+| `DATABASE_TYPE` | Tipo do banco: `POSTGRES`, `MSSQL`, `ORACLE`. | `POSTGRES` |
+| `DATABASE_SERVER` | Hostname ou IP do banco externo. | - |
+| `DATABASE_PORT` | Porta do banco externo. | `5432`/`1433` |
+| `DATABASE_USERNAME` | Usuário de conexão. | `postgres`/`sa` |
+| `DATABASE_PASSWORD` | Senha de conexão. | - |
+| `DATABASE_NAME` | Nome do banco/alias. | `protheus` |
+
+### Funcionalidades Opcionais
 
 | Variável | Descrição | Padrão | Valores |
 |----------|-----------|--------|---------|
@@ -208,79 +412,9 @@ docker run -d \
 | `DATABASE_RESTORE` | Restaurar backup na criação | `1` | `0` (não), `1` (sim) |
 | `DATABASE_RESTORE_FULL` | Restaurar backup completo | `0` | `0` (base), `1` (full) |
 | `ENABLE_REST_EMBEDDED` | REST no AppServer principal | `0` | `0` (não), `1` (sim) |
-| `ENABLE_REST_SERVICE` | AppServer REST separado | `0` | `0` (não), `1` (sim) |
+| `ENABLE_REST_SERVICE` | AppServer REST dedicado | `0` | `0` (não), `1` (sim) |
 | `DEBUG_SCRIPT` | Modo debug do entrypoint | `0` | `0` (não), `1` (sim) |
 
-### Exemplos de Configuração
-
-#### Desenvolvimento Local (Embedded)
-```bash
-docker run -d \
-  --name protheus \
-  -e DATABASE_EMBEDDED=1 \
-  -e DATABASE_RESTORE_FULL=1 \
-  -p 1234:1234 -p 1235:1235 \
-  juliansantosinfo/totvs_protheus_standalone:latest
-```
-
-#### Desenvolvimento Local (PostgreSQL Externo) 
-```bash
-docker run -d \
-  --name protheus \
-  -e DATABASE_TYPE=POSTGRES \
-  -e DATABASE_SERVER=prod-db.internal \
-  -e DATABASE_PORT=5432 \
-  -e DATABASE_USERNAME=postgres \
-  -e DATABASE_PASSWORD=${DB_PASSWORD} \
-  -e DATABASE_NAME=protheus_prd \
-  -e DATABASE_EMBEDDED=0 \
-  -e DATABASE_RESTORE=0 \
-  -p 1234:1234 -p 1235:1235 \
-  juliansantosinfo/totvs_protheus_standalone:latest
-```
-
-#### Desenvolvimento Local (MSSQL Externo)
-```bash
-docker run -d \
-  --name protheus \
-  -e DATABASE_TYPE=MSSQL \
-  -e DATABASE_SERVER=mssql-prod.internal \
-  -e DATABASE_PORT=1433 \
-  -e DATABASE_USERNAME=sa \
-  -e DATABASE_PASSWORD=${DB_PASSWORD} \
-  -e DATABASE_NAME=protheus_prd \
-  -e DATABASE_EMBEDDED=0 \
-  -e DATABASE_RESTORE=0 \
-  -p 1234:1234 -p 1235:1235 \
-  juliansantosinfo/totvs_protheus_standalone:latest
-```
-
-#### Desenvolvimento Local (Oracle com Service Name Customizado)
-```bash
-docker run -d \
-  --name protheus \
-  -e DATABASE_TYPE=ORACLE \
-  -e DATABASE_SERVER=oracle.example.com \
-  -e DATABASE_PORT=1521 \
-  -e DATABASE_USERNAME=system \
-  -e DATABASE_PASSWORD=${DB_PASSWORD} \
-  -e DATABASE_NAME=PROTHEUSPRD \
-  -e DATABASE_EMBEDDED=0 \
-  -p 1234:1234 -p 1235:1235 \
-  juliansantosinfo/totvs_protheus_standalone:latest
-```
-
-#### AppServer REST Separado
-```bash
-docker run -d \
-  --name protheus \
-  -e DATABASE_EMBEDDED=1 \
-  -e ENABLE_REST_SERVICE=1 \
-  -p 1234:1234 -p 1235:1235 \
-  -p 3234:3234 -p 3235:3235 \
-  -p 8080:8080 \
-  juliansantosinfo/totvs_protheus_standalone:latest
-```
 
 #### REST Embedded no AppServer Principal
 ```bash
@@ -291,29 +425,6 @@ docker run -d \
   -p 1234:1234 -p 1235:1235 \
   -p 8080:8080 \
   juliansantosinfo/totvs_protheus_standalone:latest
-```
-
----
-
-## 📁 Estrutura de Diretórios
-
-```
-/totvs/
-├── protheus/              # Binários do AppServer
-│   ├── bin/appserver/     # Executável e configurações
-│   └── apo/               # Repositório de objetos (RPO)
-├── dbaccess/              # Middleware DBAccess
-│   ├── multi/             # Binário dbaccess64
-│   └── tools/             # Ferramentas de configuração
-├── licenseserver/         # Servidor de licenças
-│   └── bin/appserver/     # Executável
-├── protheus_data/         # Dados do Protheus (VOLUME)
-│   ├── system/            # Arquivos de sistema
-│   └── systemload/        # Arquivos de carga
-└── resources/             # Recursos de configuração
-    ├── etc/               # Configurações ODBC
-    ├── postgres/          # Scripts e backups PostgreSQL
-    └── mssql/             # Scripts e backups MSSQL
 ```
 
 ---
@@ -378,81 +489,6 @@ docker run --rm \
 
 ---
 
-## 📚 Exemplos de Uso
-
-### Docker Compose
-
-```yaml
-version: '3.8'
-
-services:
-  protheus:
-    image: juliansantosinfo/totvs_protheus_standalone:latest
-    container_name: protheus
-    environment:
-      DATABASE_EMBEDDED: 1
-      DATABASE_RESTORE: 1
-      DATABASE_RESTORE_FULL: 0
-    ports:
-      - "1234:1234"
-      - "1235:1235"
-    volumes:
-      - protheus-data:/totvs/protheus_data
-      - postgres-data:/var/lib/pgsql/15/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["/healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-
-volumes:
-  protheus-data:
-  postgres-data:
-```
-
-### Com PostgreSQL Externo
-
-```yaml
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: protheus
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  protheus:
-    image: juliansantosinfo/totvs_protheus_standalone:latest
-    depends_on:
-      - postgres
-    environment:
-      DATABASE_TYPE: POSTGRES
-      DATABASE_SERVER: postgres
-      DATABASE_PORT: 5432
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: postgres
-      DATABASE_NAME: protheus
-      DATABASE_EMBEDDED: 0
-      DATABASE_RESTORE: 0
-    ports:
-      - "1234:1234"
-      - "1235:1235"
-    volumes:
-      - protheus-data:/totvs/protheus_data
-
-volumes:
-  protheus-data:
-  postgres-data:
-```
-
----
-
 ## 🏥 Health Check
 
 O container inclui health check automático via script `/healthcheck.sh` que verifica se o AppServer está respondendo na porta 1234.
@@ -494,6 +530,7 @@ docker exec protheus su - postgres -c "psql -c 'SELECT 1'"
 ## 🔧 Troubleshooting
 
 ### Container não inicia
+Se o container iniciar e parar imediatamente, ative o modo debug e acompanhe os logs:
 
 ```bash
 # Verificar logs
@@ -588,9 +625,18 @@ Contribuições são bem-vindas! Por favor:
 
 ---
 
-## 📄 Licença
+## 🤝 Desenvolvimento e Contribuição
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Este projeto é Open Source e encorajamos contribuições!
+
+*   Consulte o guia **[CONTRIBUTING.md](CONTRIBUTING.md)** para entender como configurar o ambiente de desenvolvimento, rodar os testes locais e submeter Pull Requests.
+*   Utilizamos scripts de validação (`lint`) e testes de integração automatizados em todo push.
+
+---
+
+## 📄 Licença 
+
+Distribuído sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
 
